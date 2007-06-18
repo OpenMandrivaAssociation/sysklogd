@@ -20,13 +20,16 @@ Patch9:		sysklogd-1.4.1-reload.patch
 Patch10:	sysklogd-1.4.1-umask.diff
 Patch11:	sysklogd-1.4.1-disable__syslog_chk.patch
 Patch12:	sysklogd-1.4.1-fix_race.patch
-Requires(pre):	fileutils, /sbin/chkconfig, initscripts >= 5.60
-Requires:	logrotate >= 3.3-8mdk, bash >= 2.0
-Requires(post):	rpm-helper
+Requires:	logrotate >= 3.3-8mdk
+Requires:	bash >= 2.0
+Requires(pre):	fileutils
+Requires(pre):	/sbin/chkconfig
+Requires(pre):	initscripts >= 5.60
+Requires(post):	    rpm-helper
 Requires(preun):	rpm-helper
 Provides:	syslog-daemon
 Conflicts:  logrotate <= 3.7.5-2mdv
-BuildRoot:	%{_tmppath}/%{name}-root
+BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description
 The sysklogd package contains two system utilities (syslogd and klogd)
@@ -36,9 +39,6 @@ places, like sendmail logs, security logs, error logs, etc.
 
 %prep
 %setup -q -n %{name}-%{version}rh
-%ifarch s390 s390x
-perl -pi -e 's/-fpie/-fPIE/' Makefile
-%endif
 %patch1 -p1 -b .initlog
 %patch2 -p1 -b .sec
 %patch3 -p1 -b .pinit
@@ -57,20 +57,22 @@ perl -pi -e 's/-fpie/-fPIE/' Makefile
 %make
 
 %install
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
-install -d %{buildroot}{/etc,%{_bindir},%{_mandir}/man{5,8},/usr/sbin}
-install -d %{buildroot}/etc/{rc.d/init.d,sysconfig}
-install -d %{buildroot}/sbin
+install -d -m 755 %{buildroot}{/sbin,%{_bindir},%{_mandir}/man{5,8}}
 
 make install TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
 	MAN_OWNER=`id -nu`
 
-install -m644 redhat/syslog.conf.rhs %{buildroot}/etc/syslog.conf
-install -m755 redhat/syslog.init %{buildroot}/etc/rc.d/init.d/syslog
-install -m644 redhat/syslog %{buildroot}/etc/sysconfig/syslog
+install -d -m 755 %{buildroot}%{_sysconfdir}
 install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
 
+install -d -m 755 %{buildroot}%{_initrddir}
+install -m 755 redhat/syslog.init %{buildroot}%{_initrddir}/syslog
+install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
+install -m 644 redhat/syslog %{buildroot}%{_sysconfdir}/sysconfig/syslog
+
+install -d -m 755 %{buildroot}%{_sbindir}
 chmod 755 %{buildroot}/sbin/syslogd
 chmod 755 %{buildroot}/sbin/klogd
 
@@ -116,13 +118,12 @@ if [ "$1" -ge "1" ]; then
 fi	
 
 %clean
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
-
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
 %doc ANNOUNCE README* NEWS INSTALL 
-%attr(0755,root,root) %{_initrddir}/syslog
+%{_initrddir}/syslog
 %config(noreplace) %{_sysconfdir}/syslog.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/syslog
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
