@@ -1,14 +1,12 @@
-# rh 1.4.1-5
-
-Summary:	System logging and kernel message trapping daemons
 Name:		sysklogd
 Version:	1.4.1
 Release: 	%mkrel 13
+Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
 URL:		http://www.infodrom.org/projects/sysklogd/
-Source:		ftp://sunsite.unc.edu/pub/Linux/system/daemons/%{name}-%{version}rh.tar.bz2
-Patch0:		sysklogd-1.4.1rh-mdkconf.patch
+Source0		ftp://sunsite.unc.edu/pub/Linux/system/daemons/%{name}-%{version}rh.tar.bz2
+Source1:	sysklogd.conf
 Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
 Patch2:		sysklogd-1.4.1-owl-syslogd-crunch_list.diff
 Patch3:		sysklogd-1.4.1rh-pinit.patch
@@ -35,12 +33,10 @@ daemons (background processes) and log system messages to different
 places, like sendmail logs, security logs, error logs, etc.
 
 %prep
-
 %setup -q -n %{name}-%{version}rh
 %ifarch s390 s390x
 perl -pi -e 's/-fpie/-fPIE/' Makefile
 %endif
-%patch0 -p1 -b .mkdconf
 %patch1 -p1 -b .initlog
 %patch2 -p1 -b .sec
 %patch3 -p1 -b .pinit
@@ -55,9 +51,7 @@ perl -pi -e 's/-fpie/-fPIE/' Makefile
 %patch12 -p1 -b .race
 
 %build
-
 %serverbuild
-
 %make
 
 %install
@@ -73,6 +67,7 @@ make install TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
 install -m644 redhat/syslog.conf.rhs %{buildroot}/etc/syslog.conf
 install -m755 redhat/syslog.init %{buildroot}/etc/rc.d/init.d/syslog
 install -m644 redhat/syslog %{buildroot}/etc/sysconfig/syslog
+install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
 
 chmod 755 %{buildroot}/sbin/syslogd
 chmod 755 %{buildroot}/sbin/klogd
