@@ -7,6 +7,7 @@ Group:		System/Kernel and hardware
 URL:		http://www.infodrom.org/projects/sysklogd/
 Source0		ftp://sunsite.unc.edu/pub/Linux/system/daemons/%{name}-%{version}rh.tar.bz2
 Source1:	sysklogd.conf
+Source2:	sysklogd.logrotate
 Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
 Patch2:		sysklogd-1.4.1-owl-syslogd-crunch_list.diff
 Patch3:		sysklogd-1.4.1rh-pinit.patch
@@ -24,6 +25,7 @@ Requires:	logrotate >= 3.3-8mdk, bash >= 2.0
 Requires(post):	rpm-helper
 Requires(preun):	rpm-helper
 Provides:	syslog-daemon
+Conflicts:  logrotate <= 3.7.5-2mdv
 BuildRoot:	%{_tmppath}/%{name}-root
 
 %description
@@ -71,6 +73,9 @@ install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
 
 chmod 755 %{buildroot}/sbin/syslogd
 chmod 755 %{buildroot}/sbin/klogd
+
+install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
+install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
 
 %pre
 # Because RPM do not know the difference about a file or a directory,
@@ -120,6 +125,7 @@ fi
 %attr(0755,root,root) %{_initrddir}/syslog
 %config(noreplace) %{_sysconfdir}/syslog.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/syslog
+%config(noreplace) %{_sysconfdir}/logrotate.d/syslog
 /sbin/*
 %{_mandir}/*/*
 
