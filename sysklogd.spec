@@ -4,8 +4,7 @@ Release: 	%mkrel 1
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
-URL:		http://www.infodrom.org/projects/sysklogd/
-# sources from fedora package
+URL:        http://download.fedora.redhat.com/pub/fedora/linux/core/development/source/SRPMS/
 Source0:	%{name}-%{version}rh.tar.gz
 Source1:	sysklogd.conf
 Source2:	sysklogd.logrotate
