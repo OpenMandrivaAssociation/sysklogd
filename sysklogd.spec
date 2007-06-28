@@ -79,32 +79,17 @@ chmod 755 %{buildroot}/sbin/klogd
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
 install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
 
-%pre
-# Because RPM do not know the difference about a file or a directory,
-# We need to verify if there is no file with the same name as the directory
-# we want to create for the new logdir architecture.
-# If the name is the same and it is a file, rename it to name.old
-for file in mail cron kernel lpr news daemons; do
-	if [ -f /var/log/$file ]; then 
-		mv -f /var/log/$file /var/log/$file.old \
-		&& mkdir /var/log/$file && mv /var/log/$file.old /var/log/$file/$file.old  
-	fi
-done
-
 %post
-# Create each log directory with logfiles : info, warnings, errors :
-for dir in /var/log/{mail,cron,kernel,lpr,news,daemons}; do
-    [ -d $dir ] || mkdir ${dir}
-    for file in $dir/{info,warnings,errors}; do
-        [ -f $file ] || touch $file && chmod 600 $file
-    done
+# create all configured file if they don't already exist
+for file in /var/log/{{auth,user,boot,drakxtools}.log,syslog,messages}; do
+    [ -f $file ] || touch $file
 done
 
-# Create standard logfiles if they do not exist:
-for file in \
- /var/log/{auth.log,syslog,user.log,messages,secure,spooler,boot.log,explanations};
-do
-    [ -f $file ] || touch $file && chmod 600 $file
+for dir in /var/log/{mail,cron,kernel,daemons}; do
+    [ -d $dir ] || mkdir $dir
+    for file in $dir/{info,warnings,errors}.log; do
+        [ -f $file ] || touch $file
+    done
 done
 
 %_post_service syslog
@@ -129,5 +114,3 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
 /sbin/*
 %{_mandir}/*/*
-
-
