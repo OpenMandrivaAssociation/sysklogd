@@ -1,25 +1,20 @@
 Name:		sysklogd
-Version:	1.4.1
-Release: 	%mkrel 14
+Version:	1.4.2
+Release: 	%mkrel 1
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
 URL:		http://www.infodrom.org/projects/sysklogd/
-Source0		ftp://sunsite.unc.edu/pub/Linux/system/daemons/%{name}-%{version}rh.tar.bz2
+# sources from fedora package
+Source0:	%{name}-%{version}rh.tar.gz
 Source1:	sysklogd.conf
 Source2:	sysklogd.logrotate
 Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
-Patch2:		sysklogd-1.4.1-owl-syslogd-crunch_list.diff
-Patch3:		sysklogd-1.4.1rh-pinit.patch
-Patch4:		sysklogd-1.4.1-siginterrupt.patch
-Patch5:		sysklogd-1.4.1-noforward_local_address.patch
-Patch6:		sysklogd-1.4.1-preserve_percents.patch
-Patch7:		sysklogd-1.4.1-no_io_in_sighandlers.patch
-Patch8:		sysklogd-1.4.1-fix_mark.patch
-Patch9:		sysklogd-1.4.1-reload.patch
-Patch10:	sysklogd-1.4.1-umask.diff
-Patch11:	sysklogd-1.4.1-disable__syslog_chk.patch
-Patch12:	sysklogd-1.4.1-fix_race.patch
+Patch2:     sysklogd-1.4.2rh.timezone.patch
+Patch3:     sysklogd-1.4.2rh-includeFacPri.patch
+Patch4:     sysklogd-1.4.2rh-dispatcher.patch
+Patch5:     sysklogd-1.4.2rh-startFailed.patch
+Patch6:     sysklogd-1.4.2rh-reload.patch
 Requires:	logrotate >= 3.3-8mdk
 Requires:	bash >= 2.0
 Requires(pre):	fileutils
@@ -40,17 +35,11 @@ places, like sendmail logs, security logs, error logs, etc.
 %prep
 %setup -q -n %{name}-%{version}rh
 %patch1 -p1 -b .initlog
-%patch2 -p1 -b .sec
-%patch3 -p1 -b .pinit
-%patch4 -p1 -b .siginterrupt
-%patch5 -p1 -b .noforward_local_address
-%patch6 -p1 -b .preserve_percents
-%patch7 -p1 -b .no_io_in_sighandlers
-%patch8 -p1 -b .fix_mark
-%patch9 -p1 -b .reload
-%patch10 -p1 -b .umask
-%patch11 -p1 -b .disable__syslog_chk
-%patch12 -p1 -b .race
+%patch2 -p1 -b .timezone
+%patch3 -p1 -b .includeFacPri
+%patch4 -p1 -b .dispatcher
+%patch5 -p1 -b .startFailed
+%patch6 -p1 -b .reload
 
 %build
 %serverbuild
@@ -59,7 +48,10 @@ places, like sendmail logs, security logs, error logs, etc.
 %install
 rm -rf %{buildroot}
 
-install -d -m 755 %{buildroot}{/sbin,%{_bindir},%{_mandir}/man{5,8}}
+install -d -m 755 %{buildroot}/sbin
+install -d -m 755 %{buildroot}%{_bindir}
+install -d -m 755 %{buildroot}%{_mandir}/man{5,8}
+install -d -m 755 %{buildroot}%{_includedir}/%{name}
 
 make install TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
 	MAN_OWNER=`id -nu`
@@ -114,3 +106,4 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
 /sbin/*
 %{_mandir}/*/*
+%{_includedir}/%{name}
