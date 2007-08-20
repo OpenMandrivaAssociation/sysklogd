@@ -17,7 +17,7 @@ Patch6:     sysklogd-1.4.2rh-reload.patch
 Requires:	logrotate >= 3.3-8mdk
 Requires:	bash >= 2.0
 Requires(pre):	fileutils
-Requires(pre):	/sbin/chkconfig
+Requires(pre):	chkconfig
 Requires(pre):	initscripts >= 5.60
 Requires(post):	    rpm-helper
 Requires(preun):	rpm-helper
