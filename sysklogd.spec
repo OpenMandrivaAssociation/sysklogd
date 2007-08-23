@@ -1,6 +1,6 @@
 Name:		sysklogd
 Version:	1.4.2
-Release: 	%mkrel 1
+Release: 	%mkrel 2
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
