@@ -1,6 +1,6 @@
 Name:		sysklogd
 Version:	1.4.2
-Release: 	%mkrel 2
+Release: 	%mkrel 3
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
@@ -8,6 +8,8 @@ URL:        http://download.fedora.redhat.com/pub/fedora/linux/core/development/
 Source0:	%{name}-%{version}rh.tar.gz
 Source1:	sysklogd.conf
 Source2:	sysklogd.logrotate
+Source3:	sysklogd.init
+Source4:	sysklogd.sysconfig
 Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
 Patch2:     sysklogd-1.4.2rh.timezone.patch
 Patch3:     sysklogd-1.4.2rh-includeFacPri.patch
@@ -58,10 +60,11 @@ make install TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
 install -d -m 755 %{buildroot}%{_sysconfdir}
 install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
 
+# init script
 install -d -m 755 %{buildroot}%{_initrddir}
-install -m 755 redhat/syslog.init %{buildroot}%{_initrddir}/syslog
+install -m 755 %{SOURCE3} %{buildroot}%{_initrddir}/syslog
 install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
-install -m 644 redhat/syslog %{buildroot}%{_sysconfdir}/sysconfig/syslog
+install -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/syslog
 
 install -d -m 755 %{buildroot}%{_sbindir}
 chmod 755 %{buildroot}/sbin/syslogd
