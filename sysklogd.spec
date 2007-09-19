@@ -1,6 +1,6 @@
 Name:		sysklogd
 Version:	1.4.2
-Release: 	%mkrel 3
+Release: 	%mkrel 4
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
@@ -10,6 +10,8 @@ Source1:	sysklogd.conf
 Source2:	sysklogd.logrotate
 Source3:	sysklogd.init
 Source4:	sysklogd.sysconfig
+Source5:        sbin.klogd.apparmor
+Source6:        sbin.syslogd.apparmor
 Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
 Patch2:     sysklogd-1.4.2rh.timezone.patch
 Patch3:     sysklogd-1.4.2rh-includeFacPri.patch
@@ -25,6 +27,7 @@ Requires(post):	    rpm-helper
 Requires(preun):	rpm-helper
 Provides:	syslog-daemon
 Conflicts:  logrotate <= 3.7.5-2mdv
+Conflicts:      apparmor-profiles < 2.1-1.961.5mdv2008.0
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
 %description
@@ -73,6 +76,11 @@ chmod 755 %{buildroot}/sbin/klogd
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
 install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
 
+# apparmor profiles
+mkdir -p %{buildroot}%{_sysconfdir}/apparmor.d
+install -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.klogd
+install -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.syslogd
+
 %post
 # create all configured file if they don't already exist
 for file in /var/log/{{auth,user,boot,drakxtools}.log,syslog,messages}; do
@@ -96,6 +104,12 @@ if [ "$1" -ge "1" ]; then
 	service syslog condrestart > /dev/null 2>&1
 fi	
 
+%posttrans
+# if we have apparmor installed, reload if it's being used
+if [ -x /sbin/apparmor_parser ]; then
+        /sbin/service apparmor condreload
+fi
+
 %clean
 rm -rf %{buildroot}
 
@@ -106,6 +120,8 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/syslog.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/syslog
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
+%config(noreplace) %{_sysconfdir}/apparmor.d/sbin.klogd
+%config(noreplace) %{_sysconfdir}/apparmor.d/sbin.syslogd
 /sbin/*
 %{_mandir}/*/*
 %{_includedir}/%{name}
