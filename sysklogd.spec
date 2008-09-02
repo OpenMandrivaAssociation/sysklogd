@@ -1,6 +1,6 @@
 Name:		sysklogd
 Version:	1.4.2
-Release: 	%mkrel 7
+Release: 	%mkrel 8
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
 Group:		System/Kernel and hardware 
@@ -18,6 +18,8 @@ Patch3:     sysklogd-1.4.2rh-includeFacPri.patch
 Patch4:     sysklogd-1.4.2rh-dispatcher.patch
 Patch5:     sysklogd-1.4.2rh-startFailed.patch
 Patch6:     sysklogd-1.4.2rh-reload.patch
+# Disable fortify for klogd, else kernel messages are not routed correctly
+Patch7:		sysklogd-1.4.2rh-disable_fortify.patch
 Requires:	logrotate >= 3.3-8mdk
 Requires:	bash >= 2.0
 Requires(pre):	coreutils
@@ -44,6 +46,7 @@ places, like sendmail logs, security logs, error logs, etc.
 %patch4 -p1 -b .dispatcher
 %patch5 -p1 -b .startFailed
 %patch6 -p1 -b .reload
+%patch7 -p0 -b .fortify
 
 %build
 %serverbuild
