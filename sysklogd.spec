@@ -1,25 +1,18 @@
 Name:		sysklogd
-Version:	1.4.2
-Release: 	%mkrel 8
+Version:	1.5
+Release: 	%mkrel 1
 Summary:	System logging and kernel message trapping daemons
 License:	GPL
-Group:		System/Kernel and hardware 
+Group:		System/Kernel and hardware
 URL:        http://download.fedora.redhat.com/pub/fedora/linux/core/development/source/SRPMS/
-Source0:	%{name}-%{version}rh.tar.gz
+Source0:	%{name}-%{version}.tar.gz
 Source1:	sysklogd.conf
 Source2:	sysklogd.logrotate
 Source3:	sysklogd.init
 Source4:	sysklogd.sysconfig
 Source5:        sbin.klogd.apparmor
 Source6:        sbin.syslogd.apparmor
-Patch1: 	sysklogd-1.4rh-do_not_use_initlog_when_restarting.patch
-Patch2:     sysklogd-1.4.2rh.timezone.patch
-Patch3:     sysklogd-1.4.2rh-includeFacPri.patch
-Patch4:     sysklogd-1.4.2rh-dispatcher.patch
-Patch5:     sysklogd-1.4.2rh-startFailed.patch
-Patch6:     sysklogd-1.4.2rh-reload.patch
-# Disable fortify for klogd, else kernel messages are not routed correctly
-Patch7:		sysklogd-1.4.2rh-disable_fortify.patch
+Patch1: sysklogd-1.5-empty-debuginfo.patch
 Requires:	logrotate >= 3.3-8mdk
 Requires:	bash >= 2.0
 Requires(pre):	coreutils
@@ -39,14 +32,8 @@ daemons (background processes) and log system messages to different
 places, like sendmail logs, security logs, error logs, etc.
 
 %prep
-%setup -q -n %{name}-%{version}rh
-%patch1 -p1 -b .initlog
-%patch2 -p1 -b .timezone
-%patch3 -p1 -b .includeFacPri
-%patch4 -p1 -b .dispatcher
-%patch5 -p1 -b .startFailed
-%patch6 -p1 -b .reload
-%patch7 -p0 -b .fortify
+%setup -q -n %{name}-%{version}
+%patch1 -p1
 
 %build
 %serverbuild
@@ -57,11 +44,13 @@ rm -rf %{buildroot}
 
 install -d -m 755 %{buildroot}/sbin
 install -d -m 755 %{buildroot}%{_bindir}
+install -d -m 755 %{buildroot}%{_sbindir}
 install -d -m 755 %{buildroot}%{_mandir}/man{5,8}
 install -d -m 755 %{buildroot}%{_includedir}/%{name}
 
-make install TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
-	MAN_OWNER=`id -nu`
+make install prefix=%{buildroot} TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
+	BINDIR=%{buildroot}%{_sbindir} MAN_USER=`id -nu` MAN_GROUP=`id -ng`
+
 
 install -d -m 755 %{buildroot}%{_sysconfdir}
 install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
@@ -73,8 +62,8 @@ install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
 install -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/syslog
 
 install -d -m 755 %{buildroot}%{_sbindir}
-chmod 755 %{buildroot}/sbin/syslogd
-chmod 755 %{buildroot}/sbin/klogd
+chmod 755 %{buildroot}/%{_sbindir}/syslogd
+chmod 755 %{buildroot}/%{_sbindir}/klogd
 
 install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
 install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
@@ -83,6 +72,10 @@ install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
 mkdir -p %{buildroot}%{_sysconfdir}/apparmor.d
 install -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.klogd
 install -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.syslogd
+
+#do symlinks for compatibility
+ln -sf /usr/sbin/syslogd %{buildroot}/sbin/syslogd
+ln -sf /usr/sbin/klogd %{buildroot}/sbin/klogd
 
 %post
 # create all configured file if they don't already exist
@@ -105,7 +98,7 @@ done
 %postun
 if [ "$1" -ge "1" ]; then
 	service syslog condrestart > /dev/null 2>&1
-fi	
+fi
 
 %posttrans
 # if we have apparmor installed, reload if it's being used
@@ -118,13 +111,14 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc ANNOUNCE README* NEWS INSTALL 
+%doc ANNOUNCE README* NEWS INSTALL
 %{_initrddir}/syslog
 %config(noreplace) %{_sysconfdir}/syslog.conf
 %config(noreplace) %{_sysconfdir}/sysconfig/syslog
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
 %config(noreplace) %{_sysconfdir}/apparmor.d/sbin.klogd
 %config(noreplace) %{_sysconfdir}/apparmor.d/sbin.syslogd
+%{_sbindir}/*
 /sbin/*
 %{_mandir}/*/*
 %{_includedir}/%{name}
