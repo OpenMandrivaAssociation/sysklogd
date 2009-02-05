@@ -1,8 +1,8 @@
 Name:		sysklogd
 Version:	1.5
-Release: 	%mkrel 2
+Release: 	%mkrel 3
 Summary:	System logging and kernel message trapping daemons
-License:	GPL
+License:	GPLv2
 Group:		System/Kernel and hardware
 URL:        http://download.fedora.redhat.com/pub/fedora/linux/core/development/source/SRPMS/
 Source0:	%{name}-%{version}.tar.gz
@@ -19,6 +19,7 @@ Requires(pre):	coreutils
 Requires(pre):	chkconfig
 Requires(pre):	initscripts >= 5.60
 Requires(post):	    rpm-helper
+Requires(post): chkconfig >= 1.3.37-3mdv
 Requires(preun):	rpm-helper
 Provides:	syslog-daemon
 Conflicts:  logrotate <= 3.7.5-2mdv
@@ -105,6 +106,9 @@ fi
 if [ -x /sbin/apparmor_parser ]; then
         /sbin/service apparmor condreload
 fi
+
+%triggerpostun -- sysklogd < 1.5-3mdv 
+/sbin/chkconfig --level 7 syslog reset
 
 %clean
 rm -rf %{buildroot}
