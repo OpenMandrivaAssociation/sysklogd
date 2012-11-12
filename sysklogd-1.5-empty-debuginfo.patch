@@ -1,0 +1,23 @@
+diff -ur sysklogd-1.5.orig/Makefile sysklogd-1.5/Makefile
+--- sysklogd-1.5.orig/Makefile	2007-05-30 17:28:48.000000000 +0200
++++ sysklogd-1.5/Makefile	2008-10-17 01:12:57.000000000 +0200
+@@ -24,7 +24,7 @@
+ # -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
+ # -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE
+ # $(shell getconf LFS_SKFLAGS)
+-LDFLAGS= -s
++#LDFLAGS= -s
+ 
+ # Look where your install program is.
+ INSTALL = /usr/bin/install
+@@ -127,8 +127,8 @@
+ 	rm -f syslogd klogd ksym syslog_tst oops_test TAGS tsyslogd tklogd
+ 
+ install_exec: syslogd klogd
+-	${INSTALL} -m 500 -s syslogd ${BINDIR}/syslogd
+-	${INSTALL} -m 500 -s klogd ${BINDIR}/klogd
++	${INSTALL} -m 500 syslogd ${BINDIR}/syslogd
++	${INSTALL} -m 500 klogd ${BINDIR}/klogd
+ 
+ install_man:
+ 	${INSTALL} -o ${MAN_USER} -g ${MAN_GROUP} -m ${MAN_PERMS} sysklogd.8 ${MANDIR}/man8/sysklogd.8

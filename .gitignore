@@ -1,0 +1,7 @@
+sbin.klogd.apparmor
+sbin.syslogd.apparmor
+sysklogd-1.5.tar.gz
+sysklogd.conf
+sysklogd.init
+sysklogd.logrotate
+sysklogd.sysconfig

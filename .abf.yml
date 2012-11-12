@@ -1,0 +1,8 @@
+sources:
+  "sbin.klogd.apparmor:"	b56fb1cb797039a8bd4b0eff650b3e9418795510
+  "sbin.syslogd.apparmor:"	e06ba3fc37553852b76df9224c46ea37c06d642a
+  "sysklogd-1.5.tar.gz:"	070cce745b023f2ce7ca7d9888af434d6d61c236
+  "sysklogd.conf:"	92b16886a4b5f0c2ebfce7fbf25006a120bd0372
+  "sysklogd.init:"	1e99f0b48a6a9be40cc8b455f45ae6cdb5501f82
+  "sysklogd.logrotate:"	fbe39d21e8283891c49a4588aad1d4a363e94697
+  "sysklogd.sysconfig:"	8ecc6ce7c353ba033f0d4605cdb165486f5711d3
