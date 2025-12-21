@@ -26,6 +26,7 @@ Conflicts:  logrotate <= 3.7.5-2mdv
 Conflicts:      apparmor-profiles < 2.1-1.961.5mdv2008.0
 BuildRoot:	%{_tmppath}/%{name}-%{version}
 
+BuildRequires:	make
 %description
 The sysklogd package contains two system utilities (syslogd and klogd)
 which provide support for system logging.  Syslogd and klogd run as
