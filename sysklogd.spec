@@ -1,129 +1,90 @@
 Name:		sysklogd
-Version:	1.5
-Release: 	5
-Summary:	System logging and kernel message trapping daemons
-License:	GPLv2
+Version:	2.8.0
+Release:	1
+Summary:	System logging daemon
+License:	BSD-3-Clause
 Group:		System/Kernel and hardware
-URL:        https://download.fedora.redhat.com/pub/fedora/linux/core/development/source/SRPMS/
-Source0:	%{name}-%{version}.tar.gz
-Source1:	sysklogd.conf
-Source2:	sysklogd.logrotate
-Source3:	sysklogd.init
-Source4:	sysklogd.sysconfig
-Source5:        sbin.klogd.apparmor
-Source6:        sbin.syslogd.apparmor
-Patch1: sysklogd-1.5-empty-debuginfo.patch
-Requires:	logrotate >= 3.3-8mdk
-Requires:	bash >= 2.0
-Requires(pre):	coreutils
-Requires(pre):	chkconfig
-Requires(pre):	initscripts >= 5.60
-Requires(post):	    rpm-helper
-Requires(post): chkconfig >= 1.3.37-3mdv
-Requires(preun):	rpm-helper
+URL:		https://github.com/troglobit/sysklogd
+Source0:	https://github.com/troglobit/sysklogd/releases/download/v%{version}/%{name}-%{version}.tar.gz
 Provides:	syslog-daemon
-Conflicts:  logrotate <= 3.7.5-2mdv
-Conflicts:      apparmor-profiles < 2.1-1.961.5mdv2008.0
-BuildRoot:	%{_tmppath}/%{name}-%{version}
+Recommends:	logrotate
+BuildSystem:	autotools
+# util-linux owns /usr/bin/logger; upstream's logger is not CLI-compatible.
+BuildOption:	--without-logger
+BuildRequires:	pkgconfig(systemd)
 
-BuildRequires:	make
 %description
-The sysklogd package contains two system utilities (syslogd and klogd)
-which provide support for system logging.  Syslogd and klogd run as
-daemons (background processes) and log system messages to different
-places, like sendmail logs, security logs, error logs, etc.
+sysklogd is the syslog daemon. This is the troglobit continuation of the
+classic BSD syslogd: one daemon reads kernel messages (no separate klogd),
+speaks RFC3164 and RFC5424, and is socket-activated by systemd's
+syslog.socket. libsyslog provides the matching syslogp() API.
 
-%prep
-%setup -q -n %{name}-%{version}
-%patch1 -p1
+%install -a
+install -D -m 644 syslog.conf %{buildroot}%{_sysconfdir}/syslog.conf
 
-%build
-%serverbuild
-%make
+install -d %{buildroot}%{_sysconfdir}/default
+cat > %{buildroot}%{_sysconfdir}/default/syslogd <<'EOF'
+# Extra options for syslogd. See syslogd(8).
+# syslog.conf already sets "secure_mode 1" (do not listen on UDP/514).
+SYSLOGD_OPTS=
+EOF
 
-%install
-rm -rf %{buildroot}
+install -d %{buildroot}%{_sysconfdir}/logrotate.d
+cat > %{buildroot}%{_sysconfdir}/logrotate.d/syslog <<'EOF'
+/var/log/auth.log
+/var/log/syslog
+/var/log/kern.log
+/var/log/mail.log
+/var/log/mail.err
+/var/log/messages
+{
+	rotate 4
+	weekly
+	missingok
+	notifempty
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+		/usr/bin/systemctl reload syslogd.service >/dev/null 2>&1 || true
+	endscript
+}
+EOF
 
-install -d -m 755 %{buildroot}/sbin
-install -d -m 755 %{buildroot}%{_bindir}
-install -d -m 755 %{buildroot}%{_sbindir}
-install -d -m 755 %{buildroot}%{_mandir}/man{5,8}
-install -d -m 755 %{buildroot}%{_includedir}/%{name}
+# Static enable. File triggers reload systemd; presets are not applied
+# without a scriptlet, and %systemd_post is obsolete here.
+install -d %{buildroot}%{_unitdir}/multi-user.target.wants
+ln -s ../syslogd.service %{buildroot}%{_unitdir}/multi-user.target.wants/syslogd.service
+# syslog.socket activates syslog.service, not syslogd.service.
+ln -s syslogd.service %{buildroot}%{_unitdir}/syslog.service
 
-make install prefix=%{buildroot} TOPDIR=%{buildroot} MANDIR=%{buildroot}%{_mandir} \
-	BINDIR=%{buildroot}%{_sbindir} MAN_USER=`id -nu` MAN_GROUP=`id -ng`
+install -d %{buildroot}%{_presetdir}
+cat > %{buildroot}%{_presetdir}/86-sysklogd.preset <<'EOF'
+enable syslogd.service
+EOF
 
-
-install -d -m 755 %{buildroot}%{_sysconfdir}
-install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/syslog.conf
-
-# init script
-install -d -m 755 %{buildroot}%{_initrddir}
-install -m 755 %{SOURCE3} %{buildroot}%{_initrddir}/syslog
-install -d -m 755 %{buildroot}%{_sysconfdir}/sysconfig
-install -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/sysconfig/syslog
-
-install -d -m 755 %{buildroot}%{_sbindir}
-chmod 755 %{buildroot}/%{_sbindir}/syslogd
-chmod 755 %{buildroot}/%{_sbindir}/klogd
-
-install -d -m 755 %{buildroot}%{_sysconfdir}/logrotate.d
-install -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/syslog
-
-# apparmor profiles
-mkdir -p %{buildroot}%{_sysconfdir}/apparmor.d
-install -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.klogd
-install -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/apparmor.d/sbin.syslogd
-
-#do symlinks for compatibility
-ln -sf /usr/sbin/syslogd %{buildroot}/sbin/syslogd
-ln -sf /usr/sbin/klogd %{buildroot}/sbin/klogd
-
-%post
-# create all configured file if they don't already exist
-for file in /var/log/{{auth,user,boot,drakxtools}.log,syslog,messages}; do
-    [ -f $file ] || touch $file
-done
-
-for dir in /var/log/{mail,cron,kernel,daemons}; do
-    [ -d $dir ] || mkdir $dir
-    for file in $dir/{info,warnings,errors}.log; do
-        [ -f $file ] || touch $file
-    done
-done
-
-%_post_service syslog
-
-%preun
-%_preun_service syslog
-
-%postun
-if [ "$1" -ge "1" ]; then
-	service syslog condrestart > /dev/null 2>&1
-fi
-
-%posttrans
-# if we have apparmor installed, reload if it's being used
-if [ -x /sbin/apparmor_parser ]; then
-        /sbin/service apparmor condreload
-fi
-
-%triggerpostun -- sysklogd < 1.5-3mdv 
-/sbin/chkconfig --level 7 syslog reset
-
-%clean
-rm -rf %{buildroot}
+rm -f %{buildroot}%{_libdir}/libsyslog.la
 
 %files
-%defattr(-,root,root)
-%doc ANNOUNCE README* NEWS INSTALL
-%{_initrddir}/syslog
+%license %{_docdir}/%{name}/LICENSE
+%doc %{_docdir}/%{name}/README.md
+%doc %{_docdir}/%{name}/ChangeLog.md
+%doc %{_docdir}/%{name}/syslog.conf
+%doc %{_docdir}/%{name}/example
 %config(noreplace) %{_sysconfdir}/syslog.conf
-%config(noreplace) %{_sysconfdir}/sysconfig/syslog
+%config(noreplace) %{_sysconfdir}/default/syslogd
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
-%config(noreplace) %{_sysconfdir}/apparmor.d/sbin.klogd
-%config(noreplace) %{_sysconfdir}/apparmor.d/sbin.syslogd
-%{_sbindir}/*
-/sbin/*
-%{_mandir}/*/*
-%{_includedir}/%{name}
+%dir %{_sysconfdir}/default
+%{_sbindir}/syslogd
+%{_unitdir}/syslogd.service
+%{_unitdir}/syslog.service
+%{_unitdir}/multi-user.target.wants/syslogd.service
+%{_presetdir}/86-sysklogd.preset
+%{_libdir}/libsyslog.so.*
+%{_libdir}/libsyslog.so
+%{_libdir}/pkgconfig/libsyslog.pc
+%dir %{_includedir}/syslog
+%{_includedir}/syslog/syslog.h
+%{_mandir}/man3/syslogp.3*
+%{_mandir}/man5/syslog.conf.5*
+%{_mandir}/man8/syslogd.8*
