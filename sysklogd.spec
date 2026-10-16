@@ -74,7 +74,6 @@ rm -f %{buildroot}%{_libdir}/libsyslog.la
 %config(noreplace) %{_sysconfdir}/syslog.conf
 %config(noreplace) %{_sysconfdir}/default/syslogd
 %config(noreplace) %{_sysconfdir}/logrotate.d/syslog
-%dir %{_sysconfdir}/default
 %{_sbindir}/syslogd
 %{_unitdir}/syslogd.service
 %{_unitdir}/syslog.service
